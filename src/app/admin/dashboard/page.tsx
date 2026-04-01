@@ -21,7 +21,7 @@ interface Registration {
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState(EVENT_DATES[0]);
+  const [selectedDate, setSelectedDate] = useState<typeof EVENT_DATES[number]>(EVENT_DATES[0]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
 

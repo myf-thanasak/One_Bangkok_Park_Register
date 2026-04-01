@@ -1,7 +1,9 @@
 import { Resend } from "resend";
 import { EVENT_DATE_LABELS } from "./constants";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function sendConfirmationEmail(data: {
   parentName: string;
@@ -63,7 +65,7 @@ export async function sendConfirmationEmail(data: {
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: process.env.EMAIL_FROM || "Waterpark <noreply@resend.dev>",
       to: [data.email],
       subject:
