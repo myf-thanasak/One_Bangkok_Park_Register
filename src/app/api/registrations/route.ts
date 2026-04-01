@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createRegistration, getSlotCount, getUserRoundsForDay, getRegistrationsByDate } from "@/lib/db";
+import { EVENT_DATES, TIME_SLOTS, MAX_PER_SLOT, MAX_ROUNDS_PER_DAY } from "@/lib/constants";
+import { sendConfirmationEmail } from "@/lib/email";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { parentName, email, phone, relationship, kidName, kidAgeGroup, selectedDate, selectedTimeSlot } = body;
+
+    if (!parentName || !email || !phone || !relationship || !kidName || !kidAgeGroup || !selectedDate || !selectedTimeSlot) {
+      return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน / All fields are required" }, { status: 400 });
+    }
+
+    if (!EVENT_DATES.includes(selectedDate as typeof EVENT_DATES[number])) {
+      return NextResponse.json({ error: "วันที่ไม่ถูกต้อง / Invalid date" }, { status: 400 });
+    }
+
+    if (!TIME_SLOTS.includes(selectedTimeSlot as typeof TIME_SLOTS[number])) {
+      return NextResponse.json({ error: "รอบไม่ถูกต้อง / Invalid time slot" }, { status: 400 });
+    }
+
+    const slotCount = await getSlotCount(selectedDate, selectedTimeSlot);
+    if (slotCount >= MAX_PER_SLOT) {
+      return NextResponse.json({ error: "รอบนี้เต็มแล้ว / This slot is full" }, { status: 400 });
+    }
+
+    const userRounds = await getUserRoundsForDay(email, selectedDate);
+    if (userRounds >= MAX_ROUNDS_PER_DAY) {
+      return NextResponse.json({
+        error: "คุณลงทะเบียนครบ 2 รอบ/วันแล้ว / You have already registered for 2 rounds today",
+      }, { status: 400 });
+    }
+
+    const registration = await createRegistration({
+      parentName,
+      email,
+      phone,
+      relationship,
+      kidName,
+      kidAgeGroup,
+      selectedDate,
+      selectedTimeSlot,
+    });
+
+    try {
+      await sendConfirmationEmail({
+        parentName,
+        email,
+        kidName,
+        selectedDate,
+        selectedTimeSlot,
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+    }
+
+    return NextResponse.json({ success: true, registration }, { status: 201 });
+  } catch (error) {
+    console.error("Registration error:", error);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาด / Internal server error" }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get("date");
+
+    if (!date) {
+      return NextResponse.json({ error: "Date is required" }, { status: 400 });
+    }
+
+    const registrations = await getRegistrationsByDate(date);
+    return NextResponse.json({ registrations });
+  } catch (error) {
+    console.error("Get registrations error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
