@@ -13,10 +13,10 @@ export default function Home() {
         </div>
         <div className="relative z-10 max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-3 drop-shadow-lg">
-            🌊 The Whimsical Water Park
+            The Whimsical Water Park
           </h1>
           <p className="text-lg md:text-xl opacity-90 mb-1">
-            ลงทะเบียนร่วมกิจกรรม The Whimsical Water Park
+            ลงทะเบียนร่วมกิจกรรม
           </p>
           <p className="text-base opacity-80 mb-1">
             วันที่ 10 - 15 เม.ย. 2569 ที่ One Bangkok Park
