@@ -20,6 +20,8 @@ export default function RegistrationForm() {
   const [slotData, setSlotData] = useState<SlotData>({});
   const [error, setError] = useState("");
 
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [consentPDPA, setConsentPDPA] = useState(false);
   const [parentName, setParentName] = useState("");
   const [email, setEmail] = useState("");
@@ -73,6 +75,25 @@ export default function RegistrationForm() {
   };
 
   const canProceedStep1 = consentPDPA;
+  const isValidEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  const isValidPhone = (val: string) => /^0\d{8,9}$/.test(val);
+
+  const validateStep2 = () => {
+    let valid = true;
+    setEmailError("");
+    setPhoneError("");
+
+    if (!isValidEmail(email)) {
+      setEmailError("กรุณากรอกอีเมลให้ถูกต้อง / Please enter a valid email");
+      valid = false;
+    }
+    if (!isValidPhone(phone)) {
+      setPhoneError("กรุณากรอกเบอร์โทร 9-10 หลัก ขึ้นต้นด้วย 0 / Phone must be 9-10 digits starting with 0");
+      valid = false;
+    }
+    return valid;
+  };
+
   const canProceedStep2 = parentName && email && phone && relationship && kidName && kidAgeGroup;
   const canProceedStep3 = selectedDate && selectedTimeSlot;
   const canSubmit = consentRules;
@@ -198,10 +219,11 @@ export default function RegistrationForm() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
+                onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+                className={`input-field ${emailError ? "border-red-400 ring-1 ring-red-400" : ""}`}
                 placeholder="example@email.com"
               />
+              {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
             </div>
 
             {/* Phone */}
@@ -212,10 +234,13 @@ export default function RegistrationForm() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input-field"
-                placeholder="0xx-xxx-xxxx"
+                onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, 10); setPhone(v); setPhoneError(""); }}
+                className={`input-field ${phoneError ? "border-red-400 ring-1 ring-red-400" : ""}`}
+                placeholder="0xxxxxxxxx"
+                maxLength={10}
+                inputMode="numeric"
               />
+              {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
             </div>
 
             {/* Relationship */}
@@ -284,7 +309,7 @@ export default function RegistrationForm() {
             </button>
             <button
               disabled={!canProceedStep2}
-              onClick={() => setStep(3)}
+              onClick={() => { if (validateStep2()) setStep(3); }}
               className="btn-primary"
             >
               ถัดไป / Next →

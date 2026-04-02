@@ -14,6 +14,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน / All fields are required" }, { status: 400 });
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "รูปแบบอีเมลไม่ถูกต้อง / Invalid email format" }, { status: 400 });
+    }
+
+    const phoneRegex = /^0\d{8,9}$/;
+    if (!phoneRegex.test(phone)) {
+      return NextResponse.json({ error: "เบอร์โทรต้อง 9-10 หลัก ขึ้นต้นด้วย 0 / Phone must be 9-10 digits starting with 0" }, { status: 400 });
+    }
+
     if (!EVENT_DATES.includes(selectedDate as typeof EVENT_DATES[number])) {
       return NextResponse.json({ error: "วันที่ไม่ถูกต้อง / Invalid date" }, { status: 400 });
     }
