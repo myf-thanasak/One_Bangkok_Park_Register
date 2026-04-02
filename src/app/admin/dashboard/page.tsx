@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { EVENT_DATES, EVENT_DATE_LABELS, TIME_SLOTS } from "@/lib/constants";
+import * as XLSX from "xlsx";
 
 interface Registration {
   id: number;
@@ -63,6 +64,38 @@ export default function AdminDashboard() {
   });
 
   const totalRegistrations = registrations.length;
+
+  const exportToExcel = () => {
+    if (registrations.length === 0) {
+      alert("ไม่มีข้อมูลสำหรับวันที่เลือก / No data for selected date");
+      return;
+    }
+
+    const dateLabel = EVENT_DATE_LABELS[selectedDate];
+    const rows = registrations.map((reg, idx) => ({
+      "#": idx + 1,
+      "Time Slot / รอบ": reg.selected_time_slot,
+      "Parent / ผู้ปกครอง": reg.parent_name,
+      "Email": reg.email,
+      "Phone / โทรศัพท์": reg.phone,
+      "Relationship / ความสัมพันธ์": reg.relationship,
+      "Kid / ชื่อเด็ก": reg.kid_name,
+      "Age Group / ช่วงอายุ": reg.kid_age_group,
+      "Registered At / ลงทะเบียนเมื่อ": new Date(reg.created_at).toLocaleString("th-TH"),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Auto column widths
+    const colWidths = Object.keys(rows[0]).map((key) => ({
+      wch: Math.max(key.length, ...rows.map((r) => String((r as Record<string, unknown>)[key] || "").length)) + 2,
+    }));
+    ws["!cols"] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `${selectedDate}`);
+    XLSX.writeFile(wb, `Registrations_${selectedDate}_${dateLabel?.en?.replace(/\s/g, "_") || selectedDate}.xlsx`);
+  };
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -133,10 +166,18 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Date Title */}
-        <h2 className="text-lg font-bold text-gray-700 mb-4">
-          📅 {EVENT_DATE_LABELS[selectedDate]?.th} / {EVENT_DATE_LABELS[selectedDate]?.en}
-        </h2>
+        {/* Date Title + Export */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold text-gray-700">
+            📅 {EVENT_DATE_LABELS[selectedDate]?.th} / {EVENT_DATE_LABELS[selectedDate]?.en}
+          </h2>
+          <button
+            onClick={exportToExcel}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-all shadow-md flex items-center gap-2"
+          >
+            📥 Export Excel
+          </button>
+        </div>
 
         {loading ? (
           <div className="text-center py-12 text-gray-400">Loading...</div>
