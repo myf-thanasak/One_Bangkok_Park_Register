@@ -12,12 +12,15 @@ export async function getSlotCount(
 }
 
 export async function getUserRoundsForDay(
+  parentName: string,
   email: string,
+  phone: string,
   date: string
 ): Promise<number> {
   const result = await sql`
     SELECT COUNT(*) as count FROM registrations 
-    WHERE email = ${email} AND selected_date = ${date}
+    WHERE selected_date = ${date}
+      AND (parent_name = ${parentName} OR email = ${email} OR phone = ${phone})
   `;
   return parseInt(result.rows[0].count, 10);
 }

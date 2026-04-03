@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "รอบนี้เต็มแล้ว / This slot is full" }, { status: 400 });
     }
 
-    const userRounds = await getUserRoundsForDay(email, selectedDate);
+    const userRounds = await getUserRoundsForDay(parentName, email, phone, selectedDate);
     if (userRounds >= MAX_ROUNDS_PER_DAY) {
       return NextResponse.json({
         error: "คุณลงทะเบียนครบ 2 รอบ/วันแล้ว / You have already registered for 2 rounds today",

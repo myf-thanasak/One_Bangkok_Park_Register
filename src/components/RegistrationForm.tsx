@@ -444,8 +444,7 @@ export default function RegistrationForm() {
             <div className="bg-green-50 rounded-xl p-4 border border-green-100">
               <h3 className="font-bold text-green-700 mb-2">🏥 สุขภาพ / Health & Safety</h3>
               <ul className="space-y-1 text-gray-600">
-                <li>• ผู้ที่มีโรคประจำตัว เช่น โรคหัวใจ โรคลมชัก หรือสตรีมีครรภ์ ควรหลีกเลี่ยงการเล่น</li>
-                <li>• Individuals with medical conditions (e.g. heart disease, epilepsy) or pregnant guardians are advised to refrain from participation</li>
+                <li>• ผู้ที่มีโรคประจำตัว เช่น โรคหัวใจ โรคลมชัก หรือสตรีมีครรภ์ ควรหลีกเลี่ยงการเล่น / Individuals with medical conditions (e.g. heart disease, epilepsy) or pregnant guardians are advised to refrain from participation</li>
                 <li>• หากรู้สึกไม่สบาย ให้หยุดเล่นและแจ้งเจ้าหน้าที่ทันที / If you feel unwell, please stop immediately and inform staff</li>
               </ul>
             </div>
@@ -455,8 +454,7 @@ export default function RegistrationForm() {
               <h3 className="font-bold text-purple-700 mb-2">👮 การดูแลของเจ้าหน้าที่ / Staff Authority</h3>
               <ul className="space-y-1 text-gray-600">
                 <li>• กรุณาปฏิบัติตามคำแนะนำของเจ้าหน้าที่อย่างเคร่งครัด / Please strictly follow all staff instructions</li>
-                <li>• เจ้าหน้าที่ขอสงวนสิทธิ์ในการยุติการเล่น หากพบพฤติกรรมที่ไม่ปลอดภัย</li>
-                <li>• Staff reserve the right to stop any activity if unsafe behavior is observed</li>
+                <li>• เจ้าหน้าที่ขอสงวนสิทธิ์ในการยุติการเล่น หากพบพฤติกรรมที่ไม่ปลอดภัย / Staff reserve the right to stop any activity if unsafe behavior is observed</li>
               </ul>
             </div>
           </div>
