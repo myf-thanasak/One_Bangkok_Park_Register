@@ -134,7 +134,7 @@ export default function AdminDashboard() {
                     : "bg-white text-gray-600 hover:bg-water-50 border border-gray-200"
                 }`}
               >
-                {day} {label.en.replace("th April 2026", " Apr")}
+                {label.en.replace("th April 2026", " Apr")}
               </button>
             );
           })}
