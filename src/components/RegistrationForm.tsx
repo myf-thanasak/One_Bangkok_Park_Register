@@ -181,7 +181,7 @@ export default function RegistrationForm() {
             📝 ข้อมูลผู้ลงทะเบียน / Registration Info
           </h2>
           <p className="text-sm text-gray-500 mb-1">
-            กรุณากรอกข้อมูลให้ถูกต้อง และครบถ้วนเพื่อร่วมกิจกรรม The Whimsical Water Park / 
+            กรุณากรอกข้อมูลให้ถูกต้อง และครบถ้วนเพื่อร่วมกิจกรรม The Whimsical Water Park
           </p>
           <p className="text-sm text-gray-500 mb-1">
             Please complete all required information to participate in The Whimsical Water Park.
@@ -327,7 +327,7 @@ export default function RegistrationForm() {
           <div className="bg-water-50 border border-water-200 rounded-xl p-3 mb-6 text-sm">
             <p className="font-semibold text-water-700">🏄 Sunshine Wave Water Park</p>
             <p className="text-water-600 text-xs mt-1">
-              ผู้เล่นต้องมีส่วนสูง 135 - 160 ซม. หรือ อายุ 9 - 12 ปี / 
+              ผู้เล่นต้องมีส่วนสูง 135 - 160 ซม. หรือ อายุ 9 - 12 ปี
             </p>
             <p className="text-water-600 text-xs">
               Participants must be 135 – 160 cm in height or 9 - 12 years old
