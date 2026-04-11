@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { EVENT_DATES, EVENT_DATE_LABELS, TIME_SLOTS } from "@/lib/constants";
+import { EVENT_DATES, EVENT_DATE_LABELS, POOLS, POOL_IDS, type PoolId } from "@/lib/constants";
 import * as XLSX from "xlsx";
 
 interface Registration {
@@ -14,6 +14,7 @@ interface Registration {
   relationship: string;
   kid_name: string;
   kid_age_group: string;
+  pool: string;
   selected_date: string;
   selected_time_slot: string;
   created_at: string;
@@ -23,8 +24,12 @@ export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<typeof EVENT_DATES[number]>(EVENT_DATES[0]);
+  const [selectedPool, setSelectedPool] = useState<PoolId>(POOL_IDS[0]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const poolInfo = POOLS[selectedPool];
+  const poolTimeSlots = poolInfo.timeSlots;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -35,7 +40,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (session && selectedDate) {
       setLoading(true);
-      fetch(`/api/registrations?date=${selectedDate}`)
+      fetch(`/api/registrations?date=${selectedDate}&pool=${selectedPool}`)
         .then((r) => r.json())
         .then((data) => {
           setRegistrations(data.registrations || []);
@@ -46,7 +51,7 @@ export default function AdminDashboard() {
           setLoading(false);
         });
     }
-  }, [session, selectedDate]);
+  }, [session, selectedDate, selectedPool]);
 
   if (status === "loading") {
     return (
@@ -59,7 +64,7 @@ export default function AdminDashboard() {
   if (!session) return null;
 
   const groupedBySlot: Record<string, Registration[]> = {};
-  TIME_SLOTS.forEach((slot) => {
+  poolTimeSlots.forEach((slot) => {
     groupedBySlot[slot] = registrations.filter((r) => r.selected_time_slot === slot);
   });
 
@@ -74,6 +79,7 @@ export default function AdminDashboard() {
     const dateLabel = EVENT_DATE_LABELS[selectedDate];
     const rows = registrations.map((reg, idx) => ({
       "#": idx + 1,
+      "Pool / สระ": poolInfo.name,
       "Time Slot / รอบ": reg.selected_time_slot,
       "Parent / ผู้ปกครอง": reg.parent_name,
       "Email": reg.email,
@@ -94,7 +100,7 @@ export default function AdminDashboard() {
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `${selectedDate}`);
-    XLSX.writeFile(wb, `Registrations_${selectedDate}_${dateLabel?.en?.replace(/\s/g, "_") || selectedDate}.xlsx`);
+    XLSX.writeFile(wb, `Registrations_${poolInfo.id}_${selectedDate}_${dateLabel?.en?.replace(/\s/g, "_") || selectedDate}.xlsx`);
   };
 
   return (
@@ -119,19 +125,38 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Pool Tabs */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          {POOL_IDS.map((pid) => {
+            const p = POOLS[pid];
+            return (
+              <button
+                key={pid}
+                onClick={() => setSelectedPool(pid)}
+                className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
+                  selectedPool === pid
+                    ? "bg-water-500 text-white shadow-md"
+                    : "bg-white text-gray-600 hover:bg-water-50 border border-gray-200"
+                }`}
+              >
+                🏊 {p.name} ({p.ageGroup} ปี)
+              </button>
+            );
+          })}
+        </div>
+
         {/* Date Tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
           {EVENT_DATES.map((date) => {
             const label = EVENT_DATE_LABELS[date];
-            const day = date.split("-")[2];
             return (
               <button
                 key={date}
                 onClick={() => setSelectedDate(date)}
                 className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
                   selectedDate === date
-                    ? "bg-water-500 text-white shadow-md"
-                    : "bg-white text-gray-600 hover:bg-water-50 border border-gray-200"
+                    ? "bg-sunshine-500 text-white shadow-md"
+                    : "bg-white text-gray-600 hover:bg-sunshine-50 border border-gray-200"
                 }`}
               >
                 {label.en.replace("th April 2026", " Apr")}
@@ -144,23 +169,23 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="card bg-water-50 border-water-200">
             <div className="text-3xl font-extrabold text-water-600">{totalRegistrations}</div>
-            <div className="text-sm text-gray-500">Total Registrations</div>
+            <div className="text-sm text-gray-500">Total ({poolInfo.name})</div>
           </div>
           <div className="card bg-green-50 border-green-200">
             <div className="text-3xl font-extrabold text-green-600">
-              {TIME_SLOTS.filter((s) => (groupedBySlot[s]?.length || 0) > 0).length}
+              {poolTimeSlots.filter((s) => (groupedBySlot[s]?.length || 0) > 0).length}
             </div>
             <div className="text-sm text-gray-500">Active Slots</div>
           </div>
           <div className="card bg-sunshine-50 border-sunshine-200">
             <div className="text-3xl font-extrabold text-sunshine-600">
-              {TIME_SLOTS.filter((s) => (groupedBySlot[s]?.length || 0) >= 30).length}
+              {poolTimeSlots.filter((s) => (groupedBySlot[s]?.length || 0) >= 30).length}
             </div>
             <div className="text-sm text-gray-500">Full Slots</div>
           </div>
           <div className="card bg-purple-50 border-purple-200">
             <div className="text-3xl font-extrabold text-purple-600">
-              {TIME_SLOTS.length * 30 - totalRegistrations}
+              {poolTimeSlots.length * 30 - totalRegistrations}
             </div>
             <div className="text-sm text-gray-500">Remaining Capacity</div>
           </div>
@@ -169,7 +194,7 @@ export default function AdminDashboard() {
         {/* Date Title + Export */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-gray-700">
-            📅 {EVENT_DATE_LABELS[selectedDate]?.th} / {EVENT_DATE_LABELS[selectedDate]?.en}
+            🏊 {poolInfo.name} — 📅 {EVENT_DATE_LABELS[selectedDate]?.th} / {EVENT_DATE_LABELS[selectedDate]?.en}
           </h2>
           <button
             onClick={exportToExcel}
@@ -183,7 +208,7 @@ export default function AdminDashboard() {
           <div className="text-center py-12 text-gray-400">Loading...</div>
         ) : (
           <div className="space-y-4">
-            {TIME_SLOTS.map((slot) => {
+            {poolTimeSlots.map((slot) => {
               const slotRegs = groupedBySlot[slot] || [];
               const count = slotRegs.length;
               if (count === 0) return (

@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { EVENT_DATE_LABELS } from "./constants";
+import { EVENT_DATE_LABELS, getPoolById } from "./constants";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -9,17 +9,20 @@ export async function sendConfirmationEmail(data: {
   parentName: string;
   email: string;
   kidName: string;
+  pool: string;
   selectedDate: string;
   selectedTimeSlot: string;
 }) {
   const dateLabel = EVENT_DATE_LABELS[data.selectedDate];
+  const poolInfo = getPoolById(data.pool);
+  const poolName = poolInfo?.name || data.pool;
 
   const htmlContent = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0099e6 0%, #4dc3ff 50%, #00c9ff 100%); padding: 3px; border-radius: 16px;">
       <div style="background: white; border-radius: 14px; padding: 40px 30px;">
         <div style="text-align: center; margin-bottom: 30px;">
           <h1 style="color: #0099e6; margin: 0; font-size: 28px;">🌊 The Whimsical Water Park</h1>
-          <p style="color: #666; margin-top: 8px; font-size: 14px;">Sunshine Wave Water Park Registration Confirmation</p>
+          <p style="color: #666; margin-top: 8px; font-size: 14px;">${poolName} Registration Confirmation</p>
         </div>
 
         <div style="background: #f0f9ff; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
@@ -27,6 +30,10 @@ export async function sendConfirmationEmail(data: {
             ✅ การลงทะเบียนสำเร็จ / Registration Confirmed
           </h2>
           <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #666; width: 40%;">สระ / Pool:</td>
+              <td style="padding: 8px 0; color: #0099e6; font-weight: 700;">${poolName}</td>
+            </tr>
             <tr>
               <td style="padding: 8px 0; color: #666; width: 40%;">ชื่อผู้ปกครอง / Parent:</td>
               <td style="padding: 8px 0; color: #333; font-weight: 600;">${data.parentName}</td>

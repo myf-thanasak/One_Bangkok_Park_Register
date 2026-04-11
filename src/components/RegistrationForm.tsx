@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   EVENT_DATES,
   EVENT_DATE_LABELS,
-  TIME_SLOTS,
+  POOLS,
   MAX_PER_SLOT,
   RELATIONSHIPS,
   AGE_GROUPS,
+  getPoolByAgeGroup,
 } from "@/lib/constants";
 
 interface SlotData {
@@ -33,15 +35,18 @@ export default function RegistrationForm() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [consentRules, setConsentRules] = useState(false);
 
+  const selectedPool = getPoolByAgeGroup(kidAgeGroup);
+  const poolTimeSlots = selectedPool?.timeSlots ?? [];
+
   useEffect(() => {
-    if (selectedDate) {
-      fetch(`/api/slots?date=${selectedDate}`)
+    if (selectedDate && selectedPool) {
+      fetch(`/api/slots?date=${selectedDate}&pool=${selectedPool.id}`)
         .then((r) => r.json())
         .then((data) => setSlotData(data.slots || {}))
         .catch(() => setSlotData({}));
       setSelectedTimeSlot("");
     }
-  }, [selectedDate]);
+  }, [selectedDate, selectedPool]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -67,7 +72,7 @@ export default function RegistrationForm() {
         setLoading(false);
         return;
       }
-      window.location.href = `/thank-you?date=${selectedDate}&time=${encodeURIComponent(selectedTimeSlot)}&parent=${encodeURIComponent(parentName)}&kid=${encodeURIComponent(kidName)}`;
+      window.location.href = `/thank-you?date=${selectedDate}&time=${encodeURIComponent(selectedTimeSlot)}&parent=${encodeURIComponent(parentName)}&kid=${encodeURIComponent(kidName)}&pool=${selectedPool?.id || ""}`;
     } catch {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่ / An error occurred, please try again");
       setLoading(false);
@@ -281,24 +286,41 @@ export default function RegistrationForm() {
               />
             </div>
 
-            {/* Kid Age Group */}
+            {/* Kid Age Group / Pool Selection */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 อายุเด็ก / Kid&apos;s Age <span className="text-red-500">*</span>
               </label>
-              <div className="space-y-3">
-                {AGE_GROUPS.map((age) => (
-                  <div
-                    key={age.value}
-                    onClick={() => setKidAgeGroup(age.value)}
-                    className={`radio-card ${
-                      kidAgeGroup === age.value ? "selected" : ""
-                    }`}
-                  >
-                    <div className="font-semibold text-sm">{age.th}</div>
-                    <div className="text-xs text-gray-500">{age.en}</div>
-                  </div>
-                ))}
+              <div className="space-y-4">
+                {AGE_GROUPS.map((age) => {
+                  const pool = POOLS[age.pool];
+                  return (
+                    <div
+                      key={age.value}
+                      onClick={() => {
+                        setKidAgeGroup(age.value);
+                        setSelectedDate("");
+                        setSelectedTimeSlot("");
+                      }}
+                      className={`radio-card overflow-hidden ${
+                        kidAgeGroup === age.value ? "selected" : ""
+                      }`}
+                    >
+                      <div className="relative w-full h-40 -mx-4 -mt-4 mb-3">
+                        <Image
+                          src={pool.image}
+                          alt={pool.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                      </div>
+                      <div className="font-bold text-base text-water-700">{pool.name}</div>
+                      <div className="font-semibold text-sm mt-1">{age.th}</div>
+                      <div className="text-xs text-gray-500">{age.en}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -324,18 +346,25 @@ export default function RegistrationForm() {
           <h2 className="text-xl font-bold text-water-700 mb-2">
             📅 เลือกวันและรอบกิจกรรม / Select Date & Time
           </h2>
-          <div className="bg-water-50 border border-water-200 rounded-xl p-3 mb-6 text-sm">
-            <p className="font-semibold text-water-700">🏄 Sunshine Wave Water Park</p>
-            <p className="text-water-600 text-xs mt-1">
-              ผู้เล่นต้องมีส่วนสูง 135 - 160 ซม. หรือ อายุ 9 - 12 ปี
-            </p>
-            <p className="text-water-600 text-xs">
-              Participants must be 135 – 160 cm in height or 9 - 12 years old
-            </p>
-            <p className="text-red-500 text-xs mt-1">
-              *หมายเหตุ เด็กเล็กต้องอยู่ในความดูแลของผู้ปกครองตลอดเวลา / Children must be under parental supervision at all times
-            </p>
-          </div>
+          {selectedPool && (
+            <div className="bg-water-50 border border-water-200 rounded-xl p-3 mb-6 text-sm">
+              <div className="relative w-full h-32 -mx-3 -mt-3 mb-3 rounded-t-xl overflow-hidden" style={{ width: "calc(100% + 1.5rem)" }}>
+                <Image
+                  src={selectedPool.image}
+                  alt={selectedPool.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 600px"
+                />
+              </div>
+              <p className="font-semibold text-water-700">🏄 {selectedPool.name}</p>
+              <p className="text-water-600 text-xs mt-1">{selectedPool.heightTh}</p>
+              <p className="text-water-600 text-xs">{selectedPool.heightEn}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {selectedPool.remarkTh} / {selectedPool.remarkEn}
+              </p>
+            </div>
+          )}
 
           {/* Date Selection */}
           <div className="mb-6">
@@ -370,7 +399,7 @@ export default function RegistrationForm() {
                 รอบกิจกรรม / Activity Rounds — {EVENT_DATE_LABELS[selectedDate]?.th} <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                {TIME_SLOTS.map((slot) => {
+                {poolTimeSlots.map((slot: string) => {
                   const count = slotData[slot] || 0;
                   const isFull = count >= MAX_PER_SLOT;
                   const remaining = MAX_PER_SLOT - count;

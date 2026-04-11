@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { EVENT_DATE_LABELS } from "@/lib/constants";
+import { EVENT_DATE_LABELS, getPoolById } from "@/lib/constants";
 import { Suspense } from "react";
 
 function ThankYouContent() {
@@ -10,6 +10,8 @@ function ThankYouContent() {
   const time = searchParams.get("time") || "";
   const parent = searchParams.get("parent") || "";
   const kid = searchParams.get("kid") || "";
+  const poolParam = searchParams.get("pool") || "";
+  const poolInfo = getPoolById(poolParam);
   const dateLabel = EVENT_DATE_LABELS[date];
 
   return (
@@ -31,6 +33,12 @@ function ThankYouContent() {
 
           {parent && (
             <div className="text-left bg-water-50 rounded-xl p-4 mb-4 space-y-2 text-sm">
+              {poolInfo && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">สระ / Pool:</span>
+                  <span className="font-semibold text-water-600">{poolInfo.name}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-500">ผู้ปกครอง / Parent:</span>
                 <span className="font-semibold">{parent}</span>

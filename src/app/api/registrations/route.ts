@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRegistration, getSlotCount, getUserRoundsForDay, getRegistrationsByDate } from "@/lib/db";
-import { EVENT_DATES, TIME_SLOTS, MAX_PER_SLOT, MAX_ROUNDS_PER_DAY } from "@/lib/constants";
+import { EVENT_DATES, MAX_PER_SLOT, MAX_ROUNDS_PER_DAY, getPoolByAgeGroup } from "@/lib/constants";
 import { sendConfirmationEmail } from "@/lib/email";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -13,6 +13,12 @@ export async function POST(request: NextRequest) {
     if (!parentName || !email || !phone || !relationship || !kidName || !kidAgeGroup || !selectedDate || !selectedTimeSlot) {
       return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน / All fields are required" }, { status: 400 });
     }
+
+    const poolInfo = getPoolByAgeGroup(kidAgeGroup);
+    if (!poolInfo) {
+      return NextResponse.json({ error: "ช่วงอายุไม่ถูกต้อง / Invalid age group" }, { status: 400 });
+    }
+    const pool = poolInfo.id;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -28,11 +34,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "วันที่ไม่ถูกต้อง / Invalid date" }, { status: 400 });
     }
 
-    if (!TIME_SLOTS.includes(selectedTimeSlot as typeof TIME_SLOTS[number])) {
-      return NextResponse.json({ error: "รอบไม่ถูกต้อง / Invalid time slot" }, { status: 400 });
+    const poolTimeSlots = poolInfo.timeSlots as readonly string[];
+    if (!poolTimeSlots.includes(selectedTimeSlot)) {
+      return NextResponse.json({ error: "รอบไม่ถูกต้อง / Invalid time slot for this pool" }, { status: 400 });
     }
 
-    const slotCount = await getSlotCount(selectedDate, selectedTimeSlot);
+    const slotCount = await getSlotCount(selectedDate, selectedTimeSlot, pool);
     if (slotCount >= MAX_PER_SLOT) {
       return NextResponse.json({ error: "รอบนี้เต็มแล้ว / This slot is full" }, { status: 400 });
     }
@@ -51,6 +58,7 @@ export async function POST(request: NextRequest) {
       relationship,
       kidName,
       kidAgeGroup,
+      pool,
       selectedDate,
       selectedTimeSlot,
     });
@@ -60,6 +68,7 @@ export async function POST(request: NextRequest) {
         parentName,
         email,
         kidName,
+        pool,
         selectedDate,
         selectedTimeSlot,
       });
@@ -88,7 +97,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
     }
 
-    const registrations = await getRegistrationsByDate(date);
+    const pool = searchParams.get("pool") || undefined;
+    const registrations = await getRegistrationsByDate(date, pool);
     return NextResponse.json({ registrations });
   } catch (error) {
     console.error("Get registrations error:", error);

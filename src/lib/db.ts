@@ -2,11 +2,12 @@ import { sql } from "@vercel/postgres";
 
 export async function getSlotCount(
   date: string,
-  timeSlot: string
+  timeSlot: string,
+  pool: string
 ): Promise<number> {
   const result = await sql`
     SELECT COUNT(*) as count FROM registrations 
-    WHERE selected_date = ${date} AND selected_time_slot = ${timeSlot}
+    WHERE selected_date = ${date} AND selected_time_slot = ${timeSlot} AND pool = ${pool}
   `;
   return parseInt(result.rows[0].count, 10);
 }
@@ -26,12 +27,13 @@ export async function getUserRoundsForDay(
 }
 
 export async function getAllSlotsForDate(
-  date: string
+  date: string,
+  pool: string
 ): Promise<Record<string, number>> {
   const result = await sql`
     SELECT selected_time_slot, COUNT(*) as count 
     FROM registrations 
-    WHERE selected_date = ${date}
+    WHERE selected_date = ${date} AND pool = ${pool}
     GROUP BY selected_time_slot
   `;
   const slots: Record<string, number> = {};
@@ -49,6 +51,7 @@ export interface Registration {
   relationship: string;
   kid_name: string;
   kid_age_group: string;
+  pool: string;
   selected_date: string;
   selected_time_slot: string;
   created_at: string;
@@ -61,24 +64,34 @@ export async function createRegistration(data: {
   relationship: string;
   kidName: string;
   kidAgeGroup: string;
+  pool: string;
   selectedDate: string;
   selectedTimeSlot: string;
 }): Promise<Registration> {
   const result = await sql`
-    INSERT INTO registrations (parent_name, email, phone, relationship, kid_name, kid_age_group, selected_date, selected_time_slot)
-    VALUES (${data.parentName}, ${data.email}, ${data.phone}, ${data.relationship}, ${data.kidName}, ${data.kidAgeGroup}, ${data.selectedDate}, ${data.selectedTimeSlot})
+    INSERT INTO registrations (parent_name, email, phone, relationship, kid_name, kid_age_group, pool, selected_date, selected_time_slot)
+    VALUES (${data.parentName}, ${data.email}, ${data.phone}, ${data.relationship}, ${data.kidName}, ${data.kidAgeGroup}, ${data.pool}, ${data.selectedDate}, ${data.selectedTimeSlot})
     RETURNING *
   `;
   return result.rows[0] as Registration;
 }
 
 export async function getRegistrationsByDate(
-  date: string
+  date: string,
+  pool?: string
 ): Promise<Registration[]> {
+  if (pool) {
+    const result = await sql`
+      SELECT * FROM registrations 
+      WHERE selected_date = ${date} AND pool = ${pool}
+      ORDER BY selected_time_slot ASC, created_at ASC
+    `;
+    return result.rows as Registration[];
+  }
   const result = await sql`
     SELECT * FROM registrations 
     WHERE selected_date = ${date}
-    ORDER BY selected_time_slot ASC, created_at ASC
+    ORDER BY pool ASC, selected_time_slot ASC, created_at ASC
   `;
   return result.rows as Registration[];
 }
